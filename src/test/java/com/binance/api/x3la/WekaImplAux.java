@@ -7,7 +7,7 @@ import weka.core.Instances;
 
 public class WekaImplAux {
 
-	public Instances createAttributes() {
+	public static Instances createAttributes() {
 		Attribute open = new Attribute("open");
 		Attribute close = new Attribute("close");
 		Attribute low = new Attribute("low");
@@ -29,7 +29,7 @@ public class WekaImplAux {
 		return dataset;
 	}
 
-	public void createInstanceForWeka( Instances dataset, double open, double close, double low, double high, double volume ) {
+	public static void createInstanceForWeka( Instances dataset, double open, double close, double low, double high, double volume ) {
 		double[] vals = new double[dataset.numAttributes()];
 		vals[0] = open;
 		vals[1] = close;
