@@ -43,6 +43,14 @@ public class MarketDataStreamX3la {
 		});
 	}
 
+	public static void getHistoricalData(String symbol, CandlestickInterval interval, Integer limit, Long startTime, Long endTime, BinanceApiCallback<List<Candlestick>> callback) {
+
+		BinanceApiAsyncRestClient cliente = BinanceApiClientFactory.newInstance().newAsyncRestClient();
+
+		cliente.getCandlestickBars(symbol, interval, limit, startTime, endTime, callback);
+
+	}
+	
 	public void getCandleStick() {
 		BinanceApiWebSocketClient client = BinanceApiClientFactory.newInstance().newWebSocketClient();
 
@@ -55,13 +63,5 @@ public class MarketDataStreamX3la {
 			String low = response.getLow();
 			String volume = response.getVolume();
 		});
-	}
-
-	public static void getHistoricalData(String symbol, CandlestickInterval interval, Integer limit, Long startTime, Long endTime, BinanceApiCallback<List<Candlestick>> callback) {
-
-		BinanceApiAsyncRestClient cliente = BinanceApiClientFactory.newInstance().newAsyncRestClient();
-
-		cliente.getCandlestickBars(symbol, interval, limit, startTime, endTime, callback);
-
 	}
 }

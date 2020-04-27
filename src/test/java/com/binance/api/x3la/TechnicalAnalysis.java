@@ -27,13 +27,12 @@ import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.trading.rules.StopGainRule;
 import org.ta4j.core.trading.rules.StopLossRule;
 
-
 public class TechnicalAnalysis {
 
 	public static void executeTechnicalAnalysis(List<String[]> allElements) {
 
 		// Getting a bar series (from any provider: CSV, web service, etc.)
-		BarSeries series = loadBitstampSeries( allElements );
+		BarSeries series = loadBitstampSeries(allElements);
 
 		// Getting the close price of the bars
 		Num firstClosePrice = series.getBar(0).getClosePrice();
@@ -92,12 +91,34 @@ public class TechnicalAnalysis {
 	/**
 	 * @return the bar series from Bitstamp (bitcoin exchange) trades
 	 */
-	
 
-	public static String[] createArrayOfStrings(String... strings) {
+	public static String[] createArrayOfStrings(double... dble) {
+		String[] strings = new String[3];
+		int i = 0;
+		for (double d : dble) {
+			if (i == 0) {
+				String timestamp = String.format("%.0f", d);
+				System.out.println(timestamp);
+				strings[i] = timestamp;
+			} else {
+				strings[i] = Double.toString(d);
+			}
+			i++;
+		}
 		return strings;
 	}
-	
+
+	public static List<String[]> prepareListForTa4j(List<double[]> listAttributes) {
+
+		List<String[]> listStr = new ArrayList<String[]>();
+
+		for (double[] arrDoubles : listAttributes) {
+			listStr.add(createArrayOfStrings(arrDoubles[0], arrDoubles[1], arrDoubles[2]));
+		}
+
+		return listStr;
+	}
+
 	public static BarSeries loadBitstampSeries(List<String[]> lines) {
 
 		lines.remove(0); // Removing header line

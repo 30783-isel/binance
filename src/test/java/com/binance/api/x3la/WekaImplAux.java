@@ -53,45 +53,64 @@ public class WekaImplAux {
 	public static void prepareInstancesForWeka(List<Candlestick> response) throws Exception {
 
 		Instances instances = WekaImplAux.createAttributes();
-
-		double lastCloseValue = 0.0;
-
-		for (Candlestick candlestick : response) {
-			System.out.println(candlestick + "\n");
-			String open = candlestick.getOpen();
-			String close = candlestick.getClose();
-			String low = candlestick.getLow();
-			String high = candlestick.getHigh();
-			String volume = candlestick.getVolume();
-			String timestamp = Long.toString(candlestick.getOpenTime());
-
-			double[] values = new double[instances.numAttributes()];
-			double closeValue = Double.parseDouble(close);
-
-			values[0] = Double.parseDouble(open);
-			values[1] = closeValue;
-			values[2] = Double.parseDouble(low);
-			values[3] = Double.parseDouble(high);
-			values[4] = Double.parseDouble(volume);
-
-			if (closeValue > lastCloseValue) {
-				values[5] = instances.attribute(5).indexOfValue("up");
-			}else {
-				values[5] = instances.attribute(5).indexOfValue("down");
-			}
-
-			lastCloseValue = Double.parseDouble(close);
-			// TESTE ------------------------------
-
-			// add data to instance
-			instances.add(new DenseInstance(1.0, values));
-		}
+		
+		List<double[]> listAttributes = prepareListOfAttributes( response, instances);
+		
+		List<String[]> allElements = TechnicalAnalysis.prepareListForTa4j(listAttributes);
+		
+		TechnicalAnalysis.executeTechnicalAnalysis(allElements);
+		
+		// add data to instance
+		//-----------------------------------------------------------------------------------------------------instances.add(new DenseInstance(1.0, values));
 
 		// instance row to predict
 		int index = 10;
 
 		mainWeka(instances);
 
+	}
+
+	private static List<double[]> prepareListOfAttributes(List<Candlestick> response, Instances instances) {
+		
+		List<double[]> listAttributes = new ArrayList<double[]>();
+		
+		
+		
+		double lastCloseValue = 0.0;
+
+		for (Candlestick candlestick : response) {
+			
+			double[] values = new double[7];
+			
+			System.out.println(candlestick + "\n");
+			String open = candlestick.getOpen();
+			String high = candlestick.getHigh();
+			String low = candlestick.getLow();
+			String close = candlestick.getClose();
+			String volume = candlestick.getVolume();
+			String timestamp = Long.toString(candlestick.getOpenTime());
+			
+			double closeValue = Double.parseDouble(close);
+
+			values[0] = Double.parseDouble((timestamp));
+			values[1] = closeValue;
+			values[2] = Double.parseDouble(volume);
+			values[3] = Double.parseDouble(open);
+			values[4] = Double.parseDouble(low);
+			values[5] = Double.parseDouble(high);
+			
+
+			if (closeValue > lastCloseValue) {
+				values[6] = instances.attribute(5).indexOfValue("up");
+			} else {
+				values[6] = instances.attribute(5).indexOfValue("down");
+			}
+
+			lastCloseValue = Double.parseDouble(close);
+			
+			listAttributes.add(values);
+		}
+		return listAttributes;
 	}
 
 	public static Evaluation classify(Classifier model, Instances trainingSet, Instances testingSet) throws Exception {
