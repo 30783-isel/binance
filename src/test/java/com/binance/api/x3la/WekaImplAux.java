@@ -3,6 +3,18 @@ package com.binance.api.x3la;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.ta4j.core.BarSeries;
+import org.ta4j.core.indicators.ATRIndicator;
+import org.ta4j.core.indicators.CCIIndicator;
+import org.ta4j.core.indicators.EMAIndicator;
+import org.ta4j.core.indicators.HMAIndicator;
+import org.ta4j.core.indicators.MACDIndicator;
+import org.ta4j.core.indicators.ROCIndicator;
+import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.Num;
+
 import com.binance.api.client.domain.market.Candlestick;
 
 import weka.classifiers.Classifier;
@@ -18,6 +30,57 @@ import weka.core.FastVector;
 import weka.core.Instances;
 
 public class WekaImplAux {
+	
+	public static void prepareInstancesForWeka(List<Candlestick> response) throws Exception {
+
+		Instances instances = WekaImplAux.createAttributes();
+
+		List<double[]> listAttributes = prepareListOfAttributes(response, instances);
+
+
+
+		BarSeries series = TechnicalAnalysis2.loadSeries(listAttributes);
+
+		ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+
+		SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
+		SMAIndicator longSma = new SMAIndicator(closePrice, 30);
+		MACDIndicator macd = new MACDIndicator(closePrice);
+		RSIIndicator rsi = new RSIIndicator(closePrice, 5);
+		ROCIndicator roc = new ROCIndicator(closePrice, 5);
+		CCIIndicator cci = new CCIIndicator(series, 5);
+		ATRIndicator atr = new ATRIndicator(series, 5);
+		EMAIndicator ema = new EMAIndicator(closePrice, 5);
+		HMAIndicator hma = new HMAIndicator(closePrice, 5);
+
+		int i = 0;
+		for(double[] dbl : listAttributes) {
+		
+			double[] values = new double[15];
+			values[0] = dbl[1];
+			values[1] = dbl[2];
+			values[2] = dbl[3];
+			values[3] = dbl[4];
+			values[4] = dbl[5];
+			values[5] = shortSma.getValue(i).doubleValue();
+			values[6] = longSma.getValue(i).doubleValue();
+			values[7] = macd.getValue(i).doubleValue();
+			values[8] = rsi.getValue(i).doubleValue();
+			values[9] = roc.getValue(i).doubleValue();
+			values[10] = cci.getValue(i).doubleValue();
+			values[11] = atr.getValue(i).doubleValue();
+			values[12] = ema.getValue(i).doubleValue();
+			values[13] = hma.getValue(i).doubleValue();
+			
+			values[14] = dbl[6];
+			
+			instances.add(new DenseInstance(1.0, values));
+			i++;
+		}
+
+		mainWeka(instances);
+
+	}
 
 	public static Instances createAttributes() {
 		Attribute open = new Attribute("open");
@@ -25,6 +88,15 @@ public class WekaImplAux {
 		Attribute low = new Attribute("low");
 		Attribute high = new Attribute("high");
 		Attribute volume = new Attribute("volume");
+		Attribute shortSma = new Attribute("shortSma");
+		Attribute longSma = new Attribute("longSma");
+		Attribute macd = new Attribute("macd");
+		Attribute rsi = new Attribute("rsi");
+		Attribute roc = new Attribute("roc");
+		Attribute cci = new Attribute("cci");
+		Attribute atr = new Attribute("atr");
+		Attribute ema = new Attribute("ema");
+		Attribute hma = new Attribute("hma");
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("up");
 		labels.add("down");
@@ -35,79 +107,60 @@ public class WekaImplAux {
 		attributes.add(low);
 		attributes.add(high);
 		attributes.add(volume);
+		attributes.add(shortSma);
+		attributes.add(longSma);
+		attributes.add(macd);
+		attributes.add(rsi);
+		attributes.add(roc);
+		attributes.add(cci);
+		attributes.add(atr);
+		attributes.add(ema);
+		attributes.add(hma);
 		attributes.add(cls);
 		Instances dataset = new Instances("Test-dataset", attributes, 0);
 
 		return dataset;
 	}
 
-	public static void createInstanceForWeka(Instances dataset, double open, double close, double low, double high, double volume) {
-		double[] vals = new double[dataset.numAttributes()];
-		vals[0] = open;
-		vals[1] = close;
-		vals[2] = low;
-		vals[3] = high;
-		vals[4] = volume;
-	}
 
-	public static void prepareInstancesForWeka(List<Candlestick> response) throws Exception {
-
-		Instances instances = WekaImplAux.createAttributes();
-		
-		List<double[]> listAttributes = prepareListOfAttributes( response, instances);
-		
-		List<String[]> allElements = TechnicalAnalysis.prepareListForTa4j(listAttributes);
-		
-		TechnicalAnalysis.executeTechnicalAnalysis(allElements);
-		
-		// add data to instance
-		//-----------------------------------------------------------------------------------------------------instances.add(new DenseInstance(1.0, values));
-
-		// instance row to predict
-		int index = 10;
-
-		mainWeka(instances);
-
-	}
+	
 
 	private static List<double[]> prepareListOfAttributes(List<Candlestick> response, Instances instances) {
-		
+
 		List<double[]> listAttributes = new ArrayList<double[]>();
-		
-		
-		
+
 		double lastCloseValue = 0.0;
 
 		for (Candlestick candlestick : response) {
-			
+
 			double[] values = new double[7];
-			
+
 			System.out.println(candlestick + "\n");
+
+			String timestamp = Long.toString(candlestick.getOpenTime());
 			String open = candlestick.getOpen();
 			String high = candlestick.getHigh();
 			String low = candlestick.getLow();
 			String close = candlestick.getClose();
 			String volume = candlestick.getVolume();
-			String timestamp = Long.toString(candlestick.getOpenTime());
-			
+
 			double closeValue = Double.parseDouble(close);
 
 			values[0] = Double.parseDouble((timestamp));
-			values[1] = closeValue;
-			values[2] = Double.parseDouble(volume);
-			values[3] = Double.parseDouble(open);
-			values[4] = Double.parseDouble(low);
-			values[5] = Double.parseDouble(high);
-			
+			values[1] = Double.parseDouble(open);
+			values[2] = Double.parseDouble(high);
+			values[3] = Double.parseDouble(low);
+			values[4] = closeValue;
+			values[5] = Double.parseDouble(volume);
 
 			if (closeValue > lastCloseValue) {
-				values[6] = instances.attribute(5).indexOfValue("up");
+				values[6] = instances.attribute(instances.numAttributes() - 1).indexOfValue("up");
 			} else {
-				values[6] = instances.attribute(5).indexOfValue("down");
+				values[6] = instances.attribute(instances.numAttributes() - 1).indexOfValue("down");
 			}
 
 			lastCloseValue = Double.parseDouble(close);
-			
+
 			listAttributes.add(values);
 		}
 		return listAttributes;

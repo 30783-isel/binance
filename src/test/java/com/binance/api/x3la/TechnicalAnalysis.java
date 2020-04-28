@@ -27,6 +27,11 @@ import org.ta4j.core.trading.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.trading.rules.StopGainRule;
 import org.ta4j.core.trading.rules.StopLossRule;
 
+
+// List<String[]> allElements =
+// TechnicalAnalysis.prepareListForTa4j(listAttributes);
+// TechnicalAnalysis.executeTechnicalAnalysis(allElements);
+
 public class TechnicalAnalysis {
 
 	public static void executeTechnicalAnalysis(List<String[]> allElements) {
@@ -94,17 +99,12 @@ public class TechnicalAnalysis {
 
 	public static String[] createArrayOfStrings(double... dble) {
 		String[] strings = new String[3];
-		int i = 0;
-		for (double d : dble) {
-			if (i == 0) {
-				String timestamp = String.format("%.0f", d);
-				System.out.println(timestamp);
-				strings[i] = timestamp;
-			} else {
-				strings[i] = Double.toString(d);
-			}
-			i++;
-		}
+
+		String timestamp = String.format("%.0f", dble[0]);
+		strings[0] = timestamp;
+		strings[1] = Double.toString(dble[1]);
+		strings[2] = Double.toString(dble[2]);
+
 		return strings;
 	}
 
@@ -113,7 +113,7 @@ public class TechnicalAnalysis {
 		List<String[]> listStr = new ArrayList<String[]>();
 
 		for (double[] arrDoubles : listAttributes) {
-			listStr.add(createArrayOfStrings(arrDoubles[0], arrDoubles[1], arrDoubles[2]));
+			listStr.add(createArrayOfStrings(arrDoubles[0], arrDoubles[4], arrDoubles[5]));
 		}
 
 		return listStr;
