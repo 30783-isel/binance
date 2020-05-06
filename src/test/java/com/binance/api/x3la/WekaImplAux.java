@@ -5,7 +5,9 @@ import java.util.List;
 
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.ATRIndicator;
+import org.ta4j.core.indicators.AccelerationDecelerationIndicator;
 import org.ta4j.core.indicators.CCIIndicator;
+import org.ta4j.core.indicators.CMOIndicator;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.HMAIndicator;
 import org.ta4j.core.indicators.MACDIndicator;
@@ -37,31 +39,37 @@ public class WekaImplAux {
 
 		List<double[]> listAttributes = prepareListOfAttributes(response, instances);
 
-
-
 		BarSeries series = TechnicalAnalysis2.loadSeries(listAttributes);
 
 		ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 
-		SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
-		SMAIndicator longSma = new SMAIndicator(closePrice, 30);
-		MACDIndicator macd = new MACDIndicator(closePrice);
-		RSIIndicator rsi = new RSIIndicator(closePrice, 5);
-		ROCIndicator roc = new ROCIndicator(closePrice, 5);
-		CCIIndicator cci = new CCIIndicator(series, 5);
+		AccelerationDecelerationIndicator accelerationDeceleration = new AccelerationDecelerationIndicator(series);
 		ATRIndicator atr = new ATRIndicator(series, 5);
+		CCIIndicator cci = new CCIIndicator(series, 5);
+		CMOIndicator cmo = new CMOIndicator(closePrice, 5);
 		EMAIndicator ema = new EMAIndicator(closePrice, 5);
 		HMAIndicator hma = new HMAIndicator(closePrice, 5);
-
+		MACDIndicator macd = new MACDIndicator(closePrice);
+		ROCIndicator roc = new ROCIndicator(closePrice, 5);
+		RSIIndicator rsi = new RSIIndicator(closePrice, 5);
+		SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
+		SMAIndicator longSma = new SMAIndicator(closePrice, 30);
+		
 		int i = 0;
+		int upDown = 0;
+		int countUp = 0;
+		int countDown = 0;
+		
+		double lastCloseValue = 0.0;
 		for(double[] dbl : listAttributes) {
 		
-			double[] values = new double[15];
+			double[] values = new double[17];
 			values[0] = dbl[1];
 			values[1] = dbl[2];
 			values[2] = dbl[3];
 			values[3] = dbl[4];
 			values[4] = dbl[5];
+			
 			values[5] = shortSma.getValue(i).doubleValue();
 			values[6] = longSma.getValue(i).doubleValue();
 			values[7] = macd.getValue(i).doubleValue();
@@ -71,13 +79,28 @@ public class WekaImplAux {
 			values[11] = atr.getValue(i).doubleValue();
 			values[12] = ema.getValue(i).doubleValue();
 			values[13] = hma.getValue(i).doubleValue();
+			values[14] = accelerationDeceleration.getValue(i).doubleValue();
+			values[15] = cmo.getValue(i).doubleValue();
 			
-			values[14] = dbl[6];
+			
+			if ((values[3] > lastCloseValue) && rsi.getValue(i).doubleValue() > 60) {
+				values[16] = instances.attribute(instances.numAttributes() - 1).indexOfValue("up");
+				countUp++;
+			} else {
+				values[16] = instances.attribute(instances.numAttributes() - 1).indexOfValue("down");
+				countDown++;
+			}
+			
+			lastCloseValue = values[3];
+			
 			
 			instances.add(new DenseInstance(1.0, values));
 			i++;
 		}
 
+		System.out.println(String.format("UP - %d", countUp));
+		System.out.println(String.format("DOWN - %d", countDown));
+		
 		mainWeka(instances);
 
 	}
@@ -97,6 +120,8 @@ public class WekaImplAux {
 		Attribute atr = new Attribute("atr");
 		Attribute ema = new Attribute("ema");
 		Attribute hma = new Attribute("hma");
+		Attribute accelerationDeceleration = new Attribute("accelerationDeceleration");
+		Attribute cmo = new Attribute("cmo");
 		ArrayList<String> labels = new ArrayList<String>();
 		labels.add("up");
 		labels.add("down");
@@ -116,6 +141,8 @@ public class WekaImplAux {
 		attributes.add(atr);
 		attributes.add(ema);
 		attributes.add(hma);
+		attributes.add(accelerationDeceleration);
+		attributes.add(cmo);
 		attributes.add(cls);
 		Instances dataset = new Instances("Test-dataset", attributes, 0);
 
@@ -128,8 +155,6 @@ public class WekaImplAux {
 	private static List<double[]> prepareListOfAttributes(List<Candlestick> response, Instances instances) {
 
 		List<double[]> listAttributes = new ArrayList<double[]>();
-
-		double lastCloseValue = 0.0;
 
 		for (Candlestick candlestick : response) {
 
@@ -152,14 +177,6 @@ public class WekaImplAux {
 			values[3] = Double.parseDouble(low);
 			values[4] = closeValue;
 			values[5] = Double.parseDouble(volume);
-
-			if (closeValue > lastCloseValue) {
-				values[6] = instances.attribute(instances.numAttributes() - 1).indexOfValue("up");
-			} else {
-				values[6] = instances.attribute(instances.numAttributes() - 1).indexOfValue("down");
-			}
-
-			lastCloseValue = Double.parseDouble(close);
 
 			listAttributes.add(values);
 		}

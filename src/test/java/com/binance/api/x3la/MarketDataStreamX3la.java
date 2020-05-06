@@ -32,7 +32,7 @@ public class MarketDataStreamX3la {
 
 		BinanceApiCallback<List<Candlestick>> callback = null;
 
-		getHistoricalData("ETHBTC", CandlestickInterval.DAILY, 10000, 1461711600000L, 1587942000000L, response -> {
+		getHistoricalData("ETHBTC", CandlestickInterval.HOURLY, 10000, 1461711600000L, 1587942000000L, response -> {
 
 			try {
 				WekaImplAux.prepareInstancesForWeka(response);
